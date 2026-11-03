@@ -1,3 +1,8 @@
+//  1 time unit = 1 hour.
+//  Data structures: Array, Linked List (orders), Queue (waiting steps),
+//                   Stack (history + undo), Sorting, Searching.
+//  Compile: g++ short_scheduler.cpp -o scheduler      Run: ./scheduler
+//===========================================================================
 
 #include <iostream>
 #include <iomanip>
