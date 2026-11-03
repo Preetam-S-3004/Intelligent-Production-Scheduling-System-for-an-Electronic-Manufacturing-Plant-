@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Intelligent Production Scheduling System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#14202b;--mute:#5b6b79;--line:#cfd7de;--acc:#0f7b8a;--accink:#fff;--warn:#c23b3b;--amb:#d98a00;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171d;--panel:#18222b;--ink:#e6edf2;--mute:#93a3b1;--line:#2b3947;--acc:#3cb7c8;--accink:#06161a;--warn:#ef6a6a;--amb:#f0a830}}
+:root[data-theme="dark"]{--bg:#10171d;--panel:#18222b;--ink:#e6edf2;--mute:#93a3b1;--line:#2b3947;--acc:#3cb7c8;--accink:#06161a;--warn:#ef6a6a;--amb:#f0a830}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:1.25rem;margin:40px 0 12px}
+.sub{color:var(--mute);margin:0 0 22px;max-width:62ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:8px 14px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--accink);font-weight:600}
+button.act{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 14px;border-radius:6px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+label{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+input[type=number]{width:70px;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+.gwrap{overflow-x:auto;padding-bottom:6px}
+.grow{display:flex;align-items:center;height:30px}
+.glab{position:sticky;left:0;z-index:1;width:70px;flex:none;background:var(--panel);font:500 .8rem "IBM Plex Mono",monospace}
+.c{width:26px;flex:none;height:24px;margin-right:1px;border-radius:2px;font:500 .62rem/24px "IBM Plex Mono",monospace;text-align:center;color:#10171d;overflow:hidden}
+.c.i{background:transparent;border-bottom:1px dotted var(--line);border-radius:0}
+.c.x{background:repeating-linear-gradient(45deg,var(--warn) 0 3px,transparent 3px 6px);border:1px solid var(--warn)}
+.c.d{background:var(--warn)}
+.c.m{background:repeating-linear-gradient(45deg,var(--amb) 0 3px,transparent 3px 6px);border:1px solid var(--amb)}
+.ruler .c{background:none;color:var(--mute);height:18px;line-height:18px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.82rem;color:var(--mute);margin-top:10px}
+.legend span{display:inline-flex;gap:6px;align-items:center}.legend .c{width:18px;height:14px;margin:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.good{color:var(--acc);font-weight:600}.bad{color:var(--warn);font-weight:600}
+.tw{overflow-x:auto}
+.ds{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.ds .panel h3{margin:0 0 4px;font-size:1rem}.ds p{margin:4px 0;color:var(--mute);font-size:.92rem}
+code{font:500 .85em "IBM Plex Mono",monospace;background:var(--bg);padding:1px 5px;border-radius:3px}
+ul{padding-left:20px}li{margin:6px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Intelligent Production Scheduling System</h1>
+<p class="sub">Alliance School of Advanced Computing micro-project. Orders move through assembly, soldering, testing, calibration and inspection on a shared set of machines. Switch schedulers, add an urgent order, or turn failures and maintenance on and off, and watch the plan change.</p>
+
+<div class="panel">
+ <div class="bar">
+  <div class="seg" role="group" aria-label="Scheduler">
+   <button id="bSmart" aria-pressed="true">Priority + deadline</button>
+   <button id="bFcfs" aria-pressed="false">First come, first served</button>
+  </div>
+  <label><input type="checkbox" id="dis" checked> Failures and maintenance</label>
+ </div>
+ <div class="bar">
+  <label>Urgent order arrives at t = <input type="number" id="ua" min="0" max="60" value="20"></label>
+  <label>Deadline <input type="number" id="ud" min="1" max="200" value="32"></label>
+  <button class="act" id="addU">Add urgent order</button>
+  <button class="act" id="reset">Reset data</button>
+ </div>
+ <div class="gwrap" id="gantt" role="img" aria-label="Gantt chart of the schedule"></div>
+ <div class="legend">
+  <span><i class="c" style="background:hsl(200 55% 62%)"></i>Order running (number = order id)</span>
+  <span><i class="c x"></i>Work lost in failure</span>
+  <span><i class="c d"></i>Machine down</span>
+  <span><i class="c m"></i>Maintenance</span>
+  <span><i class="c i"></i>Idle</span>
+ </div>
+</div>
+
+<h2>Priority + deadline vs first come, first served</h2>
+<div class="panel tw"><table id="cmp"></table></div>
+
+<h2>Order results (selected scheduler)</h2>
+<div class="panel tw"><table id="ord"></table></div>
+
+<h2>Where each data structure is used</h2>
+<div class="ds">
+ <div class="panel"><h3>Array</h3><p>Machine table, the operations inside each order, the Gantt table (machine by time), and the temporary list of ready operations that gets sorted.</p></div>
+ <div class="panel"><h3>Singly linked list</h3><p>The master list of production orders. New and urgent orders are appended at the tail in constant time.</p></div>
+ <div class="panel"><h3>Queue (linked list)</h3><p>One waiting queue per operation type, plus a separate urgent queue. A machine takes from the urgent queue first, then the normal queue.</p></div>
+ <div class="panel"><h3>Stack (linked list)</h3><p>Operation history. When a machine fails, records are popped to find the interrupted operation, which is removed and sent back to the front of its queue.</p></div>
+ <div class="panel"><h3>Sorting and searching</h3><p>Insertion sort orders ready operations by urgency, priority, deadline, then duration. Linear search finds free machines and orders; binary search works on a sorted ID array.</p></div>
+</div>
+
+<h2>Limitations and how the design handles them</h2>
+<ul>
+ <li><b>Greedy, not optimal.</b> Job shop scheduling is NP-hard, so the plan is good but not guaranteed best. The comparison table shows the gain over first come, first served.</li>
+ <li><b>Fixed processing times.</b> Durations are known in advance. Random delays are a natural next step.</li>
+ <li><b>Failed work restarts.</b> An interrupted operation loses its progress and resumes first in line once a machine is free.</li>
+ <li><b>Fixed-size arrays.</b> The plant has a known number of machines and five operation types, so arrays suit it. Overflow is checked on input.</li>
+ <li><b>No setup or transport time.</b> Listed as future work.</li>
+ <li><b>Invalid input.</b> Circular dependencies are caught with a stack before scheduling starts.</li>
+</ul>
+<p class="sub">This page is a browser version of the C++ program. Both use the same scheduling rules and sample data.</p>
+</main>
+
+<script>
+// ---- linked-list based structures (mirror the C++ classes) ----
+class Stack{constructor(){this.t=null;this.n=0}push(v){this.t={v,next:this.t};this.n++}pop(){if(!this.t)return undefined;const v=this.t.v;this.t=this.t.next;this.n--;return v}}
+class Queue{constructor(){this.f=null;this.r=null}enqueue(v){const p={v,next:null};this.r?this.r.next=p:this.f=p;this.r=p}
+ pushFront(v){const p={v,next:this.f};this.f=p;if(!this.r)this.r=p}
+ dequeue(){if(!this.f)return undefined;const v=this.f.v;this.f=this.f.next;if(!this.f)this.r=null;return v}}
+class List{constructor(){this.h=null;this.t=null}append(o){o.next=null;this.t?this.t.next=o:this.h=o;this.t=o}}
+
+const TYPES=["Assembly","Soldering","Testing","Calibration","Inspection"];
+const MACH=[["ASM-1",0,20,26],["ASM-2",0,0,0],["SLD-1",1,0,0],["SLD-2",1,0,0],["TST-1",2,0,0],["CAL-1",3,18,22],["QC-1",4,0,0]]
+ .map(([n,type,ms,me])=>({n,type,ms,me}));
+const mkOrder=(id,pr,dl,arr,urg,d)=>{let prev=-1,ops=[];d.forEach((x,k)=>{if(x>0){ops.push({type:k,dur:x,dep:prev});prev=ops.length-1}});return{id,pr,dl,arr,urg,ops}};
+const baseOrders=()=>[
+ mkOrder(101,2,40,0,false,[4,3,3,2,2]),mkOrder(102,1,30,0,false,[3,4,2,0,2]),mkOrder(103,3,60,0,false,[5,3,4,3,2]),
+ mkOrder(104,2,45,0,false,[4,2,3,2,2]),mkOrder(105,3,70,2,false,[3,3,3,0,2]),mkOrder(106,1,35,3,false,[4,3,2,2,2]),
+ mkOrder(107,2,55,5,false,[3,4,3,2,2]),mkOrder(108,1,28,10,true,[2,2,2,0,1]),mkOrder(109,3,80,12,false,[5,4,3,3,2]),
+ mkOrder(110,2,60,15,false,[3,3,4,2,2])];
+const EV=[{m:2,t:8,d:6},{m:4,t:14,d:5}];
+let ORD=baseOrders(),smartSel=true,nextId=111;
+
+function higher(a,b){const x=a.o,y=b.o;if(x.urg!==y.urg)return x.urg;if(x.pr!==y.pr)return x.pr<y.pr;if(x.dl!==y.dl)return x.dl<y.dl;return x.ops[a.k].dur<y.ops[b.k].dur}
+function insSort(a){for(let i=1;i<a.length;i++){const key=a[i];let j=i-1;while(j>=0&&higher(key,a[j])){a[j+1]=a[j];j--}a[j+1]=key}}
+
+function simulate(smart,dis){
+ const M=MACH.map(m=>({...m,busy:false,freeAt:0,cur:null,k:-1,down:0,ms:dis?m.ms:0,me:dis?m.me:0}));
+ const G=M.map(()=>[]),master=new List(),nq=TYPES.map(()=>new Queue()),uq=TYPES.map(()=>new Queue()),hist=new Stack();
+ let fin=0,intr=0,t;
+ for(t=0;t<400&&fin<ORD.length;t++){
+  M.forEach(m=>{if(m.busy&&m.freeAt===t){const o=m.cur;o.ops[m.k].st=3;m.busy=false;m.cur=null;
+   if(o.ops.every(p=>p.st===3)){o.done=true;o.comp=t;fin++}}});
+  if(dis)EV.forEach(e=>{if(e.t!==t)return;const m=M[e.m];m.down=t+e.d;if(m.busy){
+   const o=m.cur,k=m.k;for(let s=o.ops[k].start;s<t;s++)G[e.m][s]=-2;
+   const tmp=new Stack();let r;while((r=hist.pop())){if(r.o===o.id&&r.k===k&&r.m===e.m)break;tmp.push(r)}
+   while((r=tmp.pop()))hist.push(r);
+   o.ops[k].st=1;o.ops[k].start=-1;uq[o.ops[k].type].pushFront({o,k});m.busy=false;m.cur=null;intr++}});
+  ORD.forEach(d=>{if(d.arr===t)master.append({...d,ops:d.ops.map(p=>({...p,st:0,start:-1})),done:false,comp:-1})});
+  const temp=[];for(let o=master.h;o;o=o.next){if(o.done)continue;
+   o.ops.forEach((p,k)=>{if(p.st===0&&(p.dep<0||o.ops[p.dep].st===3))temp.push({o,k})})}
+  if(smart)insSort(temp);
+  temp.forEach(it=>{const p=it.o.ops[it.k];p.st=1;(smart&&it.o.urg?uq:nq)[p.type].enqueue(it)});
+  M.forEach((m,i)=>{if(m.busy||t<m.down||(t>=m.ms&&t<m.me))return;
+   const it=uq[m.type].dequeue()||nq[m.type].dequeue();if(!it)return;
+   const p=it.o.ops[it.k];p.st=2;p.start=t;m.busy=true;m.freeAt=t+p.dur;m.cur=it.o;m.k=it.k;
+   hist.push({o:it.o.id,k:it.k,m:i})});
+  M.forEach((m,i)=>{G[i][t]=m.busy?m.cur.id:(t<m.down?-3:((t>=m.ms&&t<m.me)?-4:-1))});
+ }
+ const rows=[];let ts=0,late=0,mk=0,turn=0,cnt=0;
+ for(let o=master.h;o;o=o.next){const tard=o.done?Math.max(0,o.comp-o.dl):0;
+  rows.push({id:o.id,dl:o.dl,comp:o.comp,tard,urg:o.urg});
+  if(o.done){ts+=tard;if(tard>0)late++;mk=Math.max(mk,o.comp);turn+=o.comp-o.arr;cnt++}}
+ let idle=0;G.forEach(g=>{for(let s=0;s<mk;s++)if(g[s]===-1)idle++});
+ return{G,mk,ts,late,intr,idle,turn:cnt?turn/cnt:0,rows,left:ORD.length-cnt,hist:hist.n};
+}
+
+const col=id=>`hsl(${(id*47)%360} 55% 62%)`;
+function drawGantt(R){
+ let h='<div class="grow ruler"><div class="glab"></div>';
+ for(let s=0;s<R.mk;s++)h+=`<div class="c">${s%5===0?s:''}</div>`;h+='</div>';
+ R.G.forEach((g,i)=>{h+=`<div class="grow"><div class="glab">${MACH[i].n}</div>`;
+  for(let s=0;s<R.mk;s++){const v=g[s];
+   if(v>=0)h+=`<div class="c" style="background:${col(v)}" title="t=${s}: order ${v} on ${MACH[i].n}">${v}</div>`;
+   else h+=`<div class="c ${v===-2?'x':v===-3?'d':v===-4?'m':'i'}" title="t=${s}"></div>`}
+  h+='</div>'});
+ document.getElementById('gantt').innerHTML=h;
+}
+function cmpRow(label,a,b,fmt){const f=fmt||(x=>x);const cls=a<b?'good':a>b?'bad':'';
+ return `<tr><td>${label}</td><td class="n ${cls}">${f(a)}</td><td class="n">${f(b)}</td></tr>`}
+function render(){
+ const dis=document.getElementById('dis').checked;
+ const S=simulate(true,dis),F=simulate(false,dis),R=smartSel?S:F;
+ drawGantt(R);
+ document.getElementById('cmp').innerHTML=`<tr><th>Metric (lower is better)</th><th class="n">Priority + deadline</th><th class="n">First come, first served</th></tr>`+
+  cmpRow('Makespan (time units)',S.mk,F.mk)+cmpRow('Delayed orders',S.late,F.late)+cmpRow('Total tardiness',S.ts,F.ts)+
+  cmpRow('Average turnaround',S.turn,F.turn,x=>x.toFixed(2))+cmpRow('Total machine idle time',S.idle,F.idle)+cmpRow('Interrupted operations',S.intr,F.intr)+
+  (S.left||F.left?`<tr><td colspan="3" class="bad">Unfinished orders: ${S.left} (priority), ${F.left} (FCFS) within 400 time units.</td></tr>`:'');
+ document.getElementById('ord').innerHTML=`<tr><th>Order</th><th class="n">Deadline</th><th class="n">Completed</th><th class="n">Tardiness</th><th>Status</th></tr>`+
+  R.rows.map(r=>`<tr><td>${r.id}${r.urg?' (urgent)':''}</td><td class="n">${r.dl}</td><td class="n">${r.comp<0?'-':r.comp}</td><td class="n">${r.tard}</td><td class="${r.comp<0||r.tard>0?'bad':'good'}">${r.comp<0?'Not finished':r.tard>0?'Late':'On time'}</td></tr>`).join('');
+}
+function setMode(s){smartSel=s;document.getElementById('bSmart').setAttribute('aria-pressed',s);document.getElementById('bFcfs').setAttribute('aria-pressed',!s);render()}
+document.getElementById('bSmart').onclick=()=>setMode(true);
+document.getElementById('bFcfs').onclick=()=>setMode(false);
+document.getElementById('dis').onchange=render;
+document.getElementById('addU').onclick=()=>{
+ const a=Math.max(0,parseInt(document.getElementById('ua').value)||0),d=Math.max(1,parseInt(document.getElementById('ud').value)||30);
+ ORD.push(mkOrder(nextId++,1,d,a,true,[2,2,2,0,1]));render()};
+document.getElementById('reset').onclick=()=>{ORD=baseOrders();nextId=111;render()};
+render();
+</script>
+</body>
+</html>
